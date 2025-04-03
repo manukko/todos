@@ -3,3 +3,6 @@ uvicorn
 sqlite3 
 pydantic 
 sqlalchemy
+passlib
+bcrypt 
+python-jose
