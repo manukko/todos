@@ -41,8 +41,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.delete("/unregister")
-def delete_todo(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@app.delete("/delete_user")
+def delete_user(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db.delete(current_user)
     db.commit()
     return {"message": "User deleted"}
