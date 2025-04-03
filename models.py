@@ -12,6 +12,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    todos = relationship("Todo", back_populates="owner", cascade="all")
 
 class Todo(Base):
     __tablename__ = "todos"
@@ -19,7 +20,7 @@ class Todo(Base):
     title = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     completed = Column(Boolean, default=False, nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     owner = relationship("User")
 
 def init_db():
