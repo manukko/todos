@@ -1,1 +1,4 @@
 todos_env
+env.py
+__pycache__
+todo.db
