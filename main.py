@@ -31,7 +31,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"message": "User created successfully"}
 
-# User authentication return a bearer token that allows the user to access the todo service
+# User authentication: return a bearer token that allows the user to access the service
 @app.post("/token/")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
@@ -56,7 +56,7 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db), current_user: U
     db.refresh(new_todo)
     return new_todo
 
-# Get All Todos for Logged-in User
+# Get all Todos for current user
 @app.get("/todos/")
 def read_todos(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Todo).filter(Todo.owner_id == current_user.id).all()
