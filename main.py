@@ -1,14 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 from models import Todo, User, init_db
-from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash
+from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash, TOKEN_DEFAULT_LIFESPAN_MINUTES
 from pydantic import BaseModel
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI()
-
 init_db()
 
 class UserCreate(BaseModel):
@@ -24,7 +23,7 @@ class TodoCreate(BaseModel):
 @app.post("/register/")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user.username).first():
-        raise HTTPException(status_code=409, detail="Username already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already registered")
     hashed_password = get_password_hash(user.password)
     new_user = User(username=user.username, hashed_password=hashed_password)
     db.add(new_user)
@@ -37,9 +36,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 def get_auth_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.delete("/delete_user")
@@ -68,7 +66,7 @@ def get_todo_by_id(todo_id: int, db: Session = Depends(get_db), current_user: Us
     try:
         return db.query(Todo).filter(Todo.id == todo_id, Todo.owner_id == current_user.id).one()
     except NoResultFound:
-        raise HTTPException(status_code=404, detail="Todo not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
 
 # Get Todos by title
 @app.get("/todos_by_title/")

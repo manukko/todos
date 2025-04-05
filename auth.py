@@ -11,7 +11,7 @@ from models import User, SessionLocal
 # Secret key and JWT settings: to define in env.py
 SECRET_KEY = env.SECRET_KEY
 ALGORITHM = env.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+TOKEN_DEFAULT_LIFESPAN_MINUTES = 30
 
 CREDENTIALS_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -31,7 +31,7 @@ def get_password_hash(password):
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    expire = datetime.datetime.now(datetime.timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.datetime.now(datetime.timezone.utc) + (expires_delta or timedelta(minutes=TOKEN_DEFAULT_LIFESPAN_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
