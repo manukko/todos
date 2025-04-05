@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 from models import Todo, User, init_db
 from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash
 from pydantic import BaseModel
@@ -60,6 +61,19 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db), current_user: U
 @app.get("/todos/")
 def get_todos(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Todo).filter(Todo.owner_id == current_user.id).all()
+
+# Get a Todo by id
+@app.get("/todo/{todo_id}")
+def get_todo_by_id(todo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        return db.query(Todo).filter(Todo.id == todo_id, Todo.owner_id == current_user.id).one()
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+# Get Todos by title
+@app.get("/todos_by_title/")
+def get_todos_by_title(title: str = Query(..., "title of the todo"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Todo).filter(Todo.title == title, Todo.owner_id == current_user.id).all()
 
 # Update a Todo
 @app.put("/update_todo/{todo_id}")
