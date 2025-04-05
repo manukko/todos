@@ -13,6 +13,12 @@ SECRET_KEY = env.SECRET_KEY
 ALGORITHM = env.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+CREDENTIALS_EXCEPTION = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -46,19 +52,14 @@ def authenticate_user(db: Session, username: str, password: str):
     return False
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            raise CREDENTIALS_EXCEPTION
     except JWTError:
-        raise credentials_exception
+        raise CREDENTIALS_EXCEPTION
     user = get_user(db, username)
     if user is None:
-        raise credentials_exception
+        raise CREDENTIALS_EXCEPTION
     return user
