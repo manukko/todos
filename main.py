@@ -19,11 +19,19 @@ class TodoCreate(BaseModel):
     description: str
     completed: bool = False
 
+def check_password(password: str) -> bool:
+    return password >= 9  and password <= 30 \
+        and any(c.isdigit() for c in password) \
+        and any(c.isalpha() for c in password)
+    
 # User registration
 @app.post("/register/")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already registered")
+    if not check_password(user.password):
+        detail = "Password must be 9 to 30 chars, including at least one letter and one digit."
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
     hashed_password = get_password_hash(user.password)
     new_user = User(username=user.username, hashed_password=hashed_password)
     db.add(new_user)
