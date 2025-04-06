@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import NoResultFound
 from models import Todo, User, init_db
-from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash
+from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash, TOKEN_DEFAULT_LIFESPAN_MINUTES
 from pydantic import BaseModel
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI()
-
 init_db()
 
 class UserCreate(BaseModel):
@@ -19,11 +19,32 @@ class TodoCreate(BaseModel):
     description: str
     completed: bool = False
 
+USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
+def check_username(username: str) -> bool:
+    return len(username) >= 5 and len(username) <= 30 and \
+        not any(c in USERNAME_FORBIDDEN_CHARACTERS for c in username)
+def check_password(password: str) -> bool:
+    return len(password) >= 9  and len(password) <= 30 \
+        and any(c.isdigit() for c in password) \
+        and any(c.isalpha() for c in password)
 # User registration
 @app.post("/register/")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user.username).first():
-        raise HTTPException(status_code=409, detail="Username already registered")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="Username already registered"
+        )
+    if not check_username(user.username):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail=f"Username must contain 5 to 30 characters, not in the list {USERNAME_FORBIDDEN_CHARACTERS}"
+        )
+    if not check_password(user.password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Password must contain 9 to 30 characters, including at least one letter and one digit"
+        )
     hashed_password = get_password_hash(user.password)
     new_user = User(username=user.username, hashed_password=hashed_password)
     db.add(new_user)
@@ -32,13 +53,12 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return {"message": "User created successfully"}
 
 # User authentication: return a bearer token that allows the user to access the service
-@app.post("/token/")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@app.post("/get_auth_token/")
+def get_auth_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.delete("/delete_user")
@@ -48,7 +68,7 @@ def delete_user(db: Session = Depends(get_db), current_user: User = Depends(get_
     return {"message": "User deleted"}
 
 # Create a new Todo
-@app.post("/todos/")
+@app.post("/create_todo/")
 def create_todo(todo: TodoCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_todo = Todo(title=todo.title, description=todo.description, completed=todo.completed, owner_id=current_user.id)
     db.add(new_todo)
@@ -58,11 +78,24 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db), current_user: U
 
 # Get all Todos for current user
 @app.get("/todos/")
-def read_todos(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_todos(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Todo).filter(Todo.owner_id == current_user.id).all()
 
+# Get a Todo by id
+@app.get("/todo/{todo_id}")
+def get_todo_by_id(todo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    try:
+        return db.query(Todo).filter(Todo.id == todo_id, Todo.owner_id == current_user.id).one()
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
+
+# Get Todos by title
+@app.get("/todos_by_title/")
+def get_todos_by_title(title: str = Query(..., "title of the todo"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Todo).filter(Todo.title == title, Todo.owner_id == current_user.id).all()
+
 # Update a Todo
-@app.put("/todos/{todo_id}")
+@app.put("/update_todo/{todo_id}")
 def update_todo(todo_id: int, todo: TodoCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_todo = db.query(Todo).filter(Todo.id == todo_id, Todo.owner_id == current_user.id).first()
     if db_todo:
@@ -75,7 +108,7 @@ def update_todo(todo_id: int, todo: TodoCreate, db: Session = Depends(get_db), c
     return {"error": "Todo not found"}
 
 # Delete a Todo
-@app.delete("/todos/{todo_id}")
+@app.delete("/delete_todo/{todo_id}")
 def delete_todo(todo_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_todo = db.query(Todo).filter(Todo.id == todo_id, Todo.owner_id == current_user.id).first()
     if db_todo:
