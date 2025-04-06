@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 from models import Todo, User, init_db
-from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash, TOKEN_DEFAULT_LIFESPAN_MINUTES
+from auth import get_db, get_current_user, create_access_token, authenticate_user, get_password_hash
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm
 
