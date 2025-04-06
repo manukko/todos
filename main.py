@@ -19,8 +19,10 @@ class TodoCreate(BaseModel):
     description: str
     completed: bool = False
 
+USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
 def check_username(username: str) -> bool:
-    return usernam
+    return len(username) >= 5 and len(username) <= 30 and \
+        not any(c in USERNAME_FORBIDDEN_CHARACTERS for c in username)
 def check_password(password: str) -> bool:
     return len(password) >= 9  and len(password) <= 30 \
         and any(c.isdigit() for c in password) \
@@ -32,6 +34,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, 
             detail="Username already registered"
+        )
+    if not check_username(user.username):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail=f"Username must contain 5 to 30 characters, not in the list {USERNAME_FORBIDDEN_CHARACTERS}"
         )
     if not check_password(user.password):
         raise HTTPException(
