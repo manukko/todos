@@ -3,6 +3,7 @@ from models import init_db
 from routes import router
 from contextlib import asynccontextmanager
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Server is starting...")
@@ -10,10 +11,7 @@ async def lifespan(app: FastAPI):
     yield
     print("Server is stopping...")
 
+
 version = "v1"
-app = FastAPI(
-    title="todos api",
-    version=version,
-    lifespan=lifespan
-    )
+app = FastAPI(title="todos api", version=version, lifespan=lifespan)
 app.include_router(router=router, prefix=f"/api/{version}")

@@ -2,9 +2,12 @@ from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignK
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
 DATABASE_URL = "sqlite:///./todo.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, echo=True)
+engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}, echo=True
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "users"
@@ -12,6 +15,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     todos = relationship("Todo", back_populates="owner", cascade="all")
+
 
 class Todo(Base):
     __tablename__ = "todos"
@@ -21,6 +25,7 @@ class Todo(Base):
     completed = Column(Boolean, default=False, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     owner = relationship("User")
+
 
 def init_db():
     print("Initializing database...")
