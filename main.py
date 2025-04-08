@@ -6,10 +6,9 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Server is starting...")
+    init_db()
     yield
     print("Server is stopping...")
-
-init_db()
 
 version = "v1"
 app = FastAPI(
