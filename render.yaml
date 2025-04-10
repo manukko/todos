@@ -3,5 +3,5 @@ services:
     name: manukko-todo
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000
+    startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.__init__:app --bind 0.0.0.0:8000
     plan: free
