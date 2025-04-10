@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
+from typing import Optional
 from src.db.models import Todo, User
 from src.auth.auth import (
     get_db_session,
@@ -15,6 +16,10 @@ class TodoCreate(BaseModel):
     description: str
     completed: bool = False
 
+class TodoUpdate(BaseModel):
+    title: Optional[str]
+    description: Optional[str]
+    completed: Optional[bool]
 
 # Create a new Todo
 @router.post("/")
@@ -81,22 +86,25 @@ def get_todos_by_title(
 @router.put("/todo/{todo_id}")
 def update_todo(
     todo_id: int,
-    todo: TodoCreate,
+    todo_update: TodoUpdate,
     db: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ):
-    db_todo = (
+    todo_from_db = (
         db.query(Todo)
         .filter(Todo.id == todo_id, Todo.owner_id == current_user.id)
         .first()
     )
-    if db_todo:
-        db_todo.title = todo.title
-        db_todo.description = todo.description
-        db_todo.completed = todo.completed
+    if todo_from_db:
+        if todo_update.title is not None:
+            todo_from_db.title = todo_update.title
+        if todo_update.description is not None:
+            todo_from_db.description = todo_update.description
+        if todo_update.completed is not None:
+            todo_from_db.completed = todo_update.completed
         db.commit()
-        db.refresh(db_todo)
-        return db_todo
+        db.refresh(todo_from_db)
+        return todo_from_db
     return {"error": "Todo not found"}
 
 
