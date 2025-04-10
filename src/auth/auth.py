@@ -1,12 +1,12 @@
 from datetime import timedelta
 import datetime
-import env
+import src.env as env
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from models import User, SessionLocal
+from src.db.models import User, SessionLocal
 
 # Secret key and JWT settings: to define in env.py
 SECRET_KEY = env.SECRET_KEY

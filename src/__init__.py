@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from models import init_db
-from routes import router
+from src.db.models import init_db
+from src.routes.todos import router as todo_router
+from src.routes.users import router as user_router
 from contextlib import asynccontextmanager
 
 
@@ -14,4 +15,5 @@ async def lifespan(app: FastAPI):
 
 version = "v1"
 app = FastAPI(title="todos api", version=version, lifespan=lifespan)
-app.include_router(router=router, prefix=f"/api/{version}")
+app.include_router(router=todo_router, prefix=f"/api/{version}/todos")
+app.include_router(router=user_router, prefix=f"/api/{version}/users")
