@@ -17,9 +17,9 @@ class TodoCreate(BaseModel):
     completed: bool = False
 
 class TodoUpdate(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    completed: Optional[bool]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    completed: Optional[bool] = None
 
 # Create a new Todo
 @router.post("/")
