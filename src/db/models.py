@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from src import env
-from sqlalchemy.dialects import sqlite
-from datetime import datetime
 
 DATABASE_URL = env.DATABASE_URL
 engine = create_engine(
