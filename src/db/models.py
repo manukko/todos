@@ -19,8 +19,6 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False, default="default_user")
     email = Column(String, unique=True, index=True, nullable=False, default="default@default.default")
     hashed_password = Column(String, nullable=False, default="default_password")
-    created_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
-    updated_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     todos = relationship("Todo", back_populates="owner", cascade="all")
 
 
