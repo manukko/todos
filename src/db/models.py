@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey
-from sqlalchemy.orm import sessionmaker, relationship, declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base, deferred
 from src import env
 from sqlalchemy.dialects import postgresql
 from datetime import datetime
@@ -18,7 +18,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False, default="default_user")
     email = Column(String, unique=True, index=True, nullable=False, default="default@default.default")
-    hashed_password = Column(String, nullable=False, default="default_password")
+    hashed_password = deferred(Column(String, nullable=False, default="default_password"))
     created_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     updated_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     todos = relationship("Todo", back_populates="owner", cascade="all")
