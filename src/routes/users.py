@@ -15,6 +15,7 @@ router = APIRouter()
 
 class UserCreate(BaseModel):
     username: str
+    email: str
     password: str
 
 USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
@@ -55,7 +56,7 @@ def register(user: UserCreate, db: Session = Depends(get_db_session)):
             detail="Password must contain 9 to 30 characters, including at least one letter and one digit",
         )
     hashed_password = get_password_hash(user.password)
-    new_user = User(username=user.username, hashed_password=hashed_password)
+    new_user = User(username=user.username, hashed_password=hashed_password, email=user.email)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

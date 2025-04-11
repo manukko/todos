@@ -1,7 +1,10 @@
 from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
+from src import env
+from sqlalchemy.dialects import sqlite
+from datetime import datetime
 
-DATABASE_URL = "sqlite:///./todo.db"
+DATABASE_URL = env.DATABASE_URL
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}, echo=True
 )
@@ -11,9 +14,10 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    id = Column(Integer, primary_key=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=False, default="default_user")
+    email = Column(String, unique=True, index=True, nullable=False, default="default@default.default")
+    hashed_password = Column(String, nullable=False, default="default_password")
     todos = relationship("Todo", back_populates="owner", cascade="all")
 
 
