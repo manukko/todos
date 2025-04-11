@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
@@ -102,6 +103,7 @@ def update_todo(
             todo_from_db.description = todo_update.description
         if todo_update.completed is not None:
             todo_from_db.completed = todo_update.completed
+        todo_from_db.updated_at = datetime.now()
         db.commit()
         db.refresh(todo_from_db)
         return todo_from_db
