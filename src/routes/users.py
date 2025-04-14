@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.models import User
@@ -19,6 +20,8 @@ class UserCreate(BaseModel):
     password: str
 
 USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
+ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES = 60
+REFRESH_TOKEN_DEFAULT_LIFESPAN_HOURS = 36
 
 
 def check_username(username: str) -> bool:
@@ -64,8 +67,8 @@ def register(user: UserCreate, db: Session = Depends(get_db_session)):
 
 
 # User authentication: return a bearer token that allows the user to access the service
-@router.post("/token")
-def get_auth_token(
+@router.post("/get_access_token")
+def get_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db_session),
 ):
@@ -75,8 +78,30 @@ def get_auth_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_token(data={"sub": user.username})
+    access_token = create_token(
+        data={"sub": user.username},
+        expires_delta=datetime.timedelta(minutes=ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES),
+    )
     return {"access_token": access_token, "token_type": "bearer"}
+
+# User authentication: return a bearer token that allows the user to access the service
+@router.post("/get_refresh_token")
+def get_refresh_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db_session),
+):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+    refresh_token = create_token(
+        data={"sub": user.username},
+        expires_delta=datetime.timedelta(hours=REFRESH_TOKEN_DEFAULT_LIFESPAN_HOURS),
+        is_refresh_token=True
+    )
+    return {"refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.delete("/delete")
