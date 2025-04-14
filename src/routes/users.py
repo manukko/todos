@@ -4,7 +4,7 @@ from src.db.models import User
 from src.auth.auth import (
     get_db_session,
     get_current_user,
-    create_access_token,
+    create_token,
     authenticate_user,
     get_password_hash,
 )
@@ -75,7 +75,7 @@ def get_auth_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
