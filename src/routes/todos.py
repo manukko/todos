@@ -6,7 +6,7 @@ from typing import Optional
 from src.db.models import Todo, User
 from src.auth.auth import (
     get_db_session,
-    get_current_user
+    get_current_user_factory
 )
 from pydantic import BaseModel
 
@@ -27,7 +27,7 @@ class TodoUpdate(BaseModel):
 def create_todo(
     todo: TodoCreate,
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     new_todo = Todo(
         title=todo.title,
@@ -45,7 +45,7 @@ def create_todo(
 @router.get("/")
 def get_todos(
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     return db.query(Todo).filter(Todo.owner_id == current_user.id).all()
 
@@ -55,7 +55,7 @@ def get_todos(
 def get_todo_by_id(
     todo_id: int,
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     try:
         return (
@@ -74,7 +74,7 @@ def get_todo_by_id(
 def get_todos_by_title(
     title: str = Query(..., title="title of the todo"),
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     return (
         db.query(Todo)
@@ -89,7 +89,7 @@ def update_todo(
     todo_id: int,
     todo_update: TodoUpdate,
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     todo_from_db = (
         db.query(Todo)
@@ -115,7 +115,7 @@ def update_todo(
 def delete_todo(
     todo_id: int,
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     db_todo = (
         db.query(Todo)

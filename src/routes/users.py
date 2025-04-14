@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from src.db.models import User
 from src.auth.auth import (
     get_db_session,
-    get_current_user,
+    get_current_user_factory,
     create_token,
     authenticate_user,
-    get_password_hash,
+    get_password_hash
 )
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm
@@ -21,7 +21,7 @@ class UserCreate(BaseModel):
 
 USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
 ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES = 60
-REFRESH_TOKEN_DEFAULT_LIFESPAN_HOURS = 36
+REFRESH_TOKEN_DEFAULT_LIFESPAN_HOURS = 168
 
 
 def check_username(username: str) -> bool:
@@ -103,11 +103,20 @@ def get_refresh_token(
     )
     return {"refresh_token": refresh_token, "token_type": "bearer"}
 
+@router.get("/refresh_access_token")
+def get_refresh_token_from_access_token(
+    current_user: User = Depends(get_current_user_factory(is_refresh_token=True)),
+):
+    access_token = create_token(
+        data={"sub": current_user.username},
+        expires_delta=datetime.timedelta(minutes=ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES),
+    )
+    return {"access_token": access_token, "token_type": "bearer"}    
 
 @router.delete("/delete")
 def delete_user(
     db: Session = Depends(get_db_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_factory()),
 ):
     db.delete(current_user)
     db.commit()

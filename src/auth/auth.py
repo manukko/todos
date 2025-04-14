@@ -1,11 +1,11 @@
 from datetime import timedelta
 import datetime
-from typing import Any
+from typing import Any, Callable
 import src.env as env
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from src.db.models import User, SessionLocal
 
@@ -82,12 +82,17 @@ def validate_token(token: str, is_refresh_token: bool = False) -> dict[str, Any]
     return payload
 
 
-def get_current_user(
-    access_token: str = Depends(oauth2_scheme), db: Session = Depends(get_db_session)
-):
-    payload = validate_token(access_token)
-    username = payload.get("sub")
-    user = get_user(db, username)
-    if user is None:
-        raise CREDENTIALS_EXCEPTION
-    return user
+def get_current_user_factory(
+    is_refresh_token: bool = False
+) -> Callable[[], User]:
+    def get_current_user_closure(    
+            token: str = Depends(oauth2_scheme), 
+            db: Session = Depends(get_db_session)
+        ):
+        payload = validate_token(token, is_refresh_token)
+        username = payload.get("sub")
+        user = get_user(db, username)
+        if user is None:
+            raise CREDENTIALS_EXCEPTION
+        return user
+    return get_current_user_closure
