@@ -1,7 +1,7 @@
 import redis
 from src import env
 
-ACCESS_TOKEN_JTI_EXPIRY = 3600 # ttl of access token in the redis db
+ACCESS_TOKEN_JTI_EXPIRY = 700000 # ttl of access token in the redis db
 
 token_blacklist = redis.StrictRedis(
     host=env.REDIS_HOST,
