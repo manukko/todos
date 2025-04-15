@@ -52,6 +52,10 @@ def register(user: UserCreate, db: Session = Depends(get_db_session)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Username already registered"
         )
+    if db.query(User).filter(User.email == user.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
     if not check_username(user.username):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
