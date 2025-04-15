@@ -12,7 +12,7 @@ token_blacklist = redis.StrictRedis(
 def add_jti_to_blocklist(jti: str) -> None:    
     token_blacklist.set(
         name=jti,
-        value=None,
+        value="",
         ex=ACCESS_TOKEN_JTI_EXPIRY
     )
 
