@@ -1,11 +1,12 @@
 from datetime import timedelta
 import datetime
 from typing import Any, Callable
+import uuid
 import src.env as env
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.models import User, SessionLocal
 
@@ -15,7 +16,7 @@ ALGORITHM = env.ALGORITHM
 
 CREDENTIALS_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Could not validate credentials: please provide a valid access token",
+    detail="Could not validate credentials: please provide a valid token",
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -41,6 +42,7 @@ def create_token(
     expire = datetime.datetime.now(datetime.timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
     to_encode.update({"refresh": is_refresh_token})
+    to_encode.update({"jti": str(uuid.uuid4())})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 

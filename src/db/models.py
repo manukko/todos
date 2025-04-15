@@ -4,7 +4,7 @@ from src import env
 from sqlalchemy.dialects import postgresql
 from datetime import datetime
 
-DATABASE_URL = env.DATABASE_URL
+DATABASE_URL = env.POSTGRES_DB_URL
 engine = create_engine(
     # DATABASE_URL, connect_args={"check_same_thread": False}, echo=True # for sqlite
     DATABASE_URL, echo=True # for postgres
