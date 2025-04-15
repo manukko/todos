@@ -119,6 +119,6 @@ def get_current_user_factory(
         username = payload.get("sub")
         user = get_user(db, username)
         if user is None:
-            raise INVALID_TOKEN_EXCEPTION
+            raise CREDENTIALS_EXCEPTION 
         return user
     return get_current_user_closure
