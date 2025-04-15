@@ -9,14 +9,35 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.models import User, SessionLocal
+from src.db.redis import token_in_blocklist 
 
 # Secret key and JWT settings: to define in env.py
 SECRET_KEY = env.SECRET_KEY
 ALGORITHM = env.ALGORITHM
 
 CREDENTIALS_EXCEPTION = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail={
+        "error": "Could not validate credentials"
+    },
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+TOKEN_IN_BLOCKLIST_EXCEPTION = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail={
+        "error": "Could not validate credentials: Your token is invalid or has been revoked",
+        "resolution": "Please get a valid token"
+    },
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+INVALID_TOKEN_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Could not validate credentials: please provide a valid token",
+    detail={
+        "error": "Could not validate credentials: Y our token is invalid or expired",
+        "resolution": "Please get a valid token"
+    },
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -71,6 +92,7 @@ def validate_token(token: str, is_refresh_token: bool = False) -> dict[str, Any]
         username = payload.get("sub")
         refresh = payload.get("refresh")
         exp = payload.get("exp")
+        jti = payload.get("jti")
         if (
             username is None
             or exp is None
@@ -78,9 +100,11 @@ def validate_token(token: str, is_refresh_token: bool = False) -> dict[str, Any]
             or refresh != is_refresh_token
             or datetime.datetime.fromtimestamp(exp) < datetime.datetime.now()
         ):
-            raise CREDENTIALS_EXCEPTION
+            raise INVALID_TOKEN_EXCEPTION
+        if token_in_blocklist(jti):
+            raise TOKEN_IN_BLOCKLIST_EXCEPTION
     except JWTError:
-        raise CREDENTIALS_EXCEPTION
+        raise INVALID_TOKEN_EXCEPTION
     return payload
 
 
@@ -95,6 +119,6 @@ def get_current_user_factory(
         username = payload.get("sub")
         user = get_user(db, username)
         if user is None:
-            raise CREDENTIALS_EXCEPTION
+            raise INVALID_TOKEN_EXCEPTION
         return user
     return get_current_user_closure
