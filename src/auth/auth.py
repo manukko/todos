@@ -122,3 +122,13 @@ def get_current_user_factory(
             raise CREDENTIALS_EXCEPTION 
         return user
     return get_current_user_closure
+
+def validate_token_factory(
+    is_refresh_token: bool = False
+) -> Callable[[], dict[str, Any]]:
+    def validate_token_closure(    
+            token: str = Depends(oauth2_scheme)
+        ):
+        payload = validate_token(token, is_refresh_token)
+        return payload
+    return validate_token_closure

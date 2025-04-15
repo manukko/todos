@@ -1,5 +1,7 @@
 import datetime
+from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from src.db.models import User
 from src.auth.auth import (
@@ -7,10 +9,12 @@ from src.auth.auth import (
     get_current_user_factory,
     create_token,
     authenticate_user,
-    get_password_hash
+    get_password_hash,
+    validate_token_factory
 )
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm
+from src.db.redis import add_jti_to_blocklist
 
 router = APIRouter()
 
@@ -79,7 +83,7 @@ def get_access_token(
             detail="Incorrect username or password",
         )
     access_token = create_token(
-        data={"sub": user.username},
+        data={"sub": user.username, "email": user.email},
         expires_delta=datetime.timedelta(minutes=ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES),
     )
     return {"access_token": access_token, "token_type": "bearer"}
@@ -111,7 +115,20 @@ def get_refresh_token_from_access_token(
         data={"sub": current_user.username},
         expires_delta=datetime.timedelta(minutes=ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES),
     )
-    return {"access_token": access_token, "token_type": "bearer"}    
+    return {"access_token": access_token, "token_type": "bearer"} 
+
+@router.get("/logout")
+def revoke_token(token_details: dict[str, Any] = Depends(validate_token_factory())):
+    print(token_details)
+    jti = token_details.get("jti")
+    print(jti)
+    add_jti_to_blocklist(jti)
+    return JSONResponse  (
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Logged out successfully"
+        }
+    )
 
 @router.delete("/delete")
 def delete_user(
@@ -121,3 +138,7 @@ def delete_user(
     db.delete(current_user)
     db.commit()
     return {"message": "User deleted"}
+
+@router.get("/me")
+def get_current_user(user_details = Depends(validate_token_factory())):
+    return user_details
