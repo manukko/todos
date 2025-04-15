@@ -22,6 +22,7 @@ class User(Base):
     created_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     updated_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     todos = relationship("Todo", back_populates="owner", cascade="all")
+    role = Column(String, nullable=False, server_default="user")
 
 
 class Todo(Base):
