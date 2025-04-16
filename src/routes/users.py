@@ -12,16 +12,12 @@ from src.auth.auth import (
     get_password_hash,
     validate_token_factory
 )
-from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
+from src.schemas.users import UserCreate, UserModel
 
 router = APIRouter()
 
-class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
 
 USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
 ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES = 60
@@ -46,7 +42,7 @@ def check_password(password: str) -> bool:
 
 
 # User registration
-@router.post("/register")
+@router.post("/register", response_model=UserModel)
 def register(user: UserCreate, db: Session = Depends(get_db_session)):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
@@ -71,7 +67,7 @@ def register(user: UserCreate, db: Session = Depends(get_db_session)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "User created successfully"}
+    return new_user
 
 
 # User authentication: return a bearer token that allows the user to access the service
@@ -143,6 +139,6 @@ def delete_user(
     db.commit()
     return {"message": "User deleted"}
 
-@router.get("/me")
-def get_current_user(user_details = Depends(validate_token_factory())):
-    return user_details
+@router.get("/me", response_model=UserModel)
+def get_current_user(current_user = Depends(get_current_user_factory())):
+    return current_user

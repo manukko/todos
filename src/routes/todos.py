@@ -2,25 +2,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
-from typing import Optional
 from src.db.models import Todo, User
 from src.auth.auth import (
     get_db_session,
     get_current_user_factory
 )
-from pydantic import BaseModel
+from src.schemas.todos import TodoCreate, TodoUpdate
 
 router = APIRouter()
-
-class TodoCreate(BaseModel):
-    title: str
-    description: str
-    completed: bool = False
-
-class TodoUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
 
 # Create a new Todo
 @router.post("/")
