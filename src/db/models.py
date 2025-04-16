@@ -34,7 +34,7 @@ class Todo(Base):
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     created_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     updated_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
-    owner = relationship("User")
+    owner = relationship("User", back_populates="todos")
 
 
 def init_db():
