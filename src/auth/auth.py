@@ -35,7 +35,7 @@ TOKEN_IN_BLOCKLIST_EXCEPTION = HTTPException(
 INVALID_TOKEN_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail={
-        "error": "Could not validate credentials: Y our token is invalid or expired",
+        "error": "Could not validate credentials: Your token is invalid or expired",
         "resolution": "Please get a valid token"
     },
     headers={"WWW-Authenticate": "Bearer"},
