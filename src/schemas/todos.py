@@ -17,6 +17,5 @@ class TodoModel(BaseModel):
     title: str
     description: str
     completed: bool
-    owner_id: int
     created_at: datetime
     updated_at: datetime

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
@@ -7,7 +8,7 @@ from src.auth.auth import (
     get_db_session,
     get_current_user_factory
 )
-from src.schemas.todos import TodoCreate, TodoUpdate
+from src.schemas.todos import TodoCreate, TodoModel, TodoUpdate
 
 router = APIRouter()
 
@@ -31,7 +32,7 @@ def create_todo(
 
 
 # Get all Todos for current user
-@router.get("/")
+@router.get("/", response_model=List[TodoModel])
 def get_todos(
     db: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user_factory()),

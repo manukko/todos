@@ -14,7 +14,7 @@ from src.auth.auth import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
-from src.schemas.users import UserCreate, UserModel
+from src.schemas.users import UserCreate, UserModel, UserTodosModel
 
 router = APIRouter()
 
@@ -139,6 +139,6 @@ def delete_user(
     db.commit()
     return {"message": "User deleted"}
 
-@router.get("/me", response_model=UserModel)
+@router.get("/me", response_model=UserTodosModel)
 def get_current_user(current_user = Depends(get_current_user_factory())):
     return current_user
