@@ -139,6 +139,10 @@ def delete_user(
     db.commit()
     return {"message": "User deleted"}
 
-@router.get("/me", response_model=UserTodosModel)
+@router.get("/me", response_model=UserModel)
 def get_current_user(current_user = Depends(get_current_user_factory())):
+    return current_user
+
+@router.get("/me/detail", response_model=UserTodosModel)
+def get_current_user_detail(current_user = Depends(get_current_user_factory())):
     return current_user
