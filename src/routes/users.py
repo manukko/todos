@@ -14,7 +14,8 @@ from src.auth.auth import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
-from src.schemas.users import UserCreate, UserModel, UserTodosModel
+from src.schemas.users import EmailModel, UserCreate, UserModel, UserTodosModel
+from src.mail import mail, create_message
 
 router = APIRouter()
 
@@ -146,3 +147,23 @@ def get_current_user(current_user = Depends(get_current_user_factory())):
 @router.get("/me/detail", response_model=UserTodosModel)
 def get_current_user_detail(current_user = Depends(get_current_user_factory())):
     return current_user
+
+@router.post("/send_email")
+async def send_email(
+    emails: EmailModel
+):
+    addresses = emails.addresses
+    subject = "Welcome!"
+    html = "<h1>Welcome to the todos app!</h1>"
+    message = create_message(
+        recipients=addresses,
+        subject=subject,
+        body=html
+    )
+    await mail.send_message(message)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Email sent successfully"
+        }
+    )

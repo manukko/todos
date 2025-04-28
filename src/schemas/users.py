@@ -19,3 +19,6 @@ class UserModel(BaseModel):
 
 class UserTodosModel(UserModel):
     todos: List[TodoModel]
+
+class EmailModel(BaseModel):
+    addresses: List[str]
