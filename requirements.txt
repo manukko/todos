@@ -1,4 +1,5 @@
 fastapi
+fastapi-mail
 gunicorn
 uvicorn 
 pydantic 
@@ -10,3 +11,4 @@ python-multipart
 postgres
 alembic
 redis
+itsdangerous
