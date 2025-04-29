@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey, text
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base, deferred
 from src import env
 from sqlalchemy.dialects import postgresql
@@ -21,8 +21,9 @@ class User(Base):
     hashed_password = deferred(Column(String, nullable=False, default="default_password"))
     created_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
     updated_at = Column(postgresql.TIMESTAMP, default=datetime.now, nullable=False)
-    todos = relationship("Todo", back_populates="owner", cascade="all")
+    is_verified = Column(Boolean, nullable=False, default=False, server_default=text('false'))
     role = Column(String, nullable=False, server_default="user")
+    todos = relationship("Todo", back_populates="owner", cascade="all")
 
 
 class Todo(Base):

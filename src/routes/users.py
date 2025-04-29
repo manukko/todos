@@ -10,15 +10,18 @@ from src.auth.auth import (
     create_token,
     authenticate_user,
     get_password_hash,
-    validate_token_factory
+    validate_token_factory,
+    create_url_safe_token,
+    decode_url_safe_token
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
-from src.schemas.users import EmailModel, UserCreate, UserModel, UserTodosModel
+from src.schemas.users import UserCreate, UserModel, UserTodosModel
 from src.mail import mail, create_message
-
+from src import env
 router = APIRouter()
 
+DOMAIN = env.DOMAIN
 
 USERNAME_FORBIDDEN_CHARACTERS = list("$%\\/<>:^?!")
 ACCESS_TOKEN_DEFAULT_LIFESPAN_MINUTES = 60
@@ -43,8 +46,8 @@ def check_password(password: str) -> bool:
 
 
 # User registration
-@router.post("/register", response_model=UserModel)
-def register(user: UserCreate, db: Session = Depends(get_db_session)):
+@router.post("/register")
+async def register(user: UserCreate, db: Session = Depends(get_db_session)):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Username already registered"
@@ -68,7 +71,63 @@ def register(user: UserCreate, db: Session = Depends(get_db_session)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+
+    # Send email for user verification
+    token = create_url_safe_token({"email": user.email})
+    link_to_verify_email = f"http://{DOMAIN}/api/v1/users/verify/{token}"
+    html_message = f"""
+    link = 
+    <h1>Verify your email</h1>
+    <p>Click this link <a href="{link_to_verify_email}">link</a> to verify your email address:</p>
+    """
+
+    message = create_message(
+        recipients=[user.email],
+        subject="Verify your email",
+        body=html_message
+    )
+    await mail.send_message(message)
+
+    return {
+        "message": "User created successfully. Check your email to verify your account.",
+        "user": new_user
+    }
+
+@router.get("/verify/{token}")
+async def verify_user_account(
+    token: str,
+    db : Session = Depends(get_db_session)
+):
+    try:
+        token_data = decode_url_safe_token(token)
+        user_email = token_data.get("email")
+    except Exception:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Sorry, an unexpected error has occurred while decoding verification token...",
+            )
+
+    if user_email is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email not found",
+        )        
+    user = db.query(User).filter(User.email == user_email).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    user.is_verified = True
+    db.commit()
+    db.refresh(user)
+    return JSONResponse (
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "User verified successfully!"
+        }
+    )
 
 
 # User authentication: return a bearer token that allows the user to access the service
@@ -147,23 +206,3 @@ def get_current_user(current_user = Depends(get_current_user_factory())):
 @router.get("/me/detail", response_model=UserTodosModel)
 def get_current_user_detail(current_user = Depends(get_current_user_factory())):
     return current_user
-
-@router.post("/send_email")
-async def send_email(
-    emails: EmailModel
-):
-    addresses = emails.addresses
-    subject = "Welcome!"
-    html = "<h1>Welcome to the todos app!</h1>"
-    message = create_message(
-        recipients=addresses,
-        subject=subject,
-        body=html
-    )
-    await mail.send_message(message)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={
-            "message": "Email sent successfully"
-        }
-    )

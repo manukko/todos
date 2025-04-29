@@ -9,7 +9,8 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.db.models import User, SessionLocal
-from src.db.redis import token_in_blocklist 
+from src.db.redis import token_in_blocklist
+from itsdangerous import URLSafeTimedSerializer
 
 # Secret key and JWT settings: to define in env.py
 SECRET_KEY = env.SECRET_KEY
@@ -45,6 +46,11 @@ INVALID_TOKEN_EXCEPTION = HTTPException(
 pwd_context = CryptContext(schemes=["bcrypt"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+salt = "email-configuration"
+serializer = URLSafeTimedSerializer(
+    secret_key=env.SECRET_KEY,
+    salt=salt
+)
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -132,3 +138,17 @@ def validate_token_factory(
         payload = validate_token(token, is_refresh_token)
         return payload
     return validate_token_closure
+
+
+def create_url_safe_token(data: dict):
+    token = serializer.dumps(data)
+    return token
+
+def decode_url_safe_token(token: str):
+    try:
+        data = serializer.loads(token)
+        return data
+    except Exception as e:
+        print(f"Error decoding token: {e}")
+        return None
+    
