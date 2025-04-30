@@ -1,6 +1,6 @@
 import datetime
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from src.db.models import User
@@ -47,7 +47,7 @@ def check_password(password: str) -> bool:
 
 # User registration
 @router.post("/register")
-async def register(user: UserCreate, db: Session = Depends(get_db_session)):
+async def register(user: UserCreate, backgroud_tasks: BackgroundTasks, db: Session = Depends(get_db_session)):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Username already registered"
@@ -86,7 +86,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db_session)):
         subject="Verify your email",
         body=html_message
     )
-    await mail.send_message(message)
+    backgroud_tasks.add_task(mail.send_message, message)
 
     return {
         "message": "User created successfully. Check your email to verify your account.",
