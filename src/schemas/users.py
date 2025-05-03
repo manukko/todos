@@ -22,3 +22,10 @@ class UserTodosModel(UserModel):
 
 class EmailModel(BaseModel):
     addresses: List[str]
+
+class SendResetPasswordLinkModel(BaseModel):
+    email: str
+
+class ResetPasswordModel(BaseModel):
+    password: str
+    confirm_password: str

@@ -7,6 +7,7 @@ from src.db.models import User
 from src.auth.auth import (
     get_db_session,
     get_current_user_factory,
+    get_user_by_email,
     create_token,
     authenticate_user,
     get_password_hash,
@@ -16,7 +17,7 @@ from src.auth.auth import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
-from src.schemas.users import UserCreate, UserModel, UserTodosModel
+from src.schemas.users import ResetPasswordModel, SendResetPasswordLinkModel, UserCreate, UserModel, UserTodosModel
 from src.mail import mail, create_message
 from src import env
 router = APIRouter()
@@ -112,7 +113,7 @@ async def verify_user_account(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Email not found",
         )        
-    user = db.query(User).filter(User.email == user_email).first()
+    user = get_user_by_email(db, user_email)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -206,3 +207,80 @@ def get_current_user(current_user = Depends(get_current_user_factory())):
 @router.get("/me/detail", response_model=UserTodosModel)
 def get_current_user_detail(current_user = Depends(get_current_user_factory())):
     return current_user
+
+@router.post("/send_reset_password_link")
+def send_reset_password_link(
+    password_reset_model: SendResetPasswordLinkModel,
+    backgroud_tasks: BackgroundTasks,
+    db: Session = Depends(get_db_session),
+):
+    
+    if get_user_by_email(db, password_reset_model.email) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User for email {password_reset_model.email} does not exist.",
+        )
+
+    # Send email for password reset
+    token = create_url_safe_token({"email": password_reset_model.email})
+    link_to_reset_password = f"http://{DOMAIN}/api/v1/users/reset_password/{token}"
+    html_message = f"""
+    link = 
+    <h1>Verify your email</h1>
+    <p>Click this link <a href="{link_to_reset_password}">link</a> to reset your password:</p>
+    """
+
+    message = create_message(
+        recipients=[password_reset_model.email],
+        subject="Reset password",
+        body=html_message
+    )
+    backgroud_tasks.add_task(mail.send_message, message)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content="Please check the provided email to reset your password"
+    )
+
+@router.post("/reset_password/{token}")
+def reset_password(
+    token: str,
+    reset_password_model: ResetPasswordModel,
+    db: Session = Depends(get_db_session)
+):
+    
+    if not check_password(reset_password_model.password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password must contain 9 to 30 characters, including at least one letter and one digit",
+        )
+    if reset_password_model.password != reset_password_model.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password and password confirmation must match",
+        )
+    
+    try:
+        token_data: dict = decode_url_safe_token(token)
+        user_email = token_data.get("email")
+    except Exception:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Sorry, an unexpected error has occurred while decoding verification token...",
+            )
+    
+    user = get_user_by_email(db, user_email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    user.hashed_password = get_password_hash(reset_password_model.password)
+    db.commit()
+    db.refresh(user)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content="Password successfully reset"
+    )
