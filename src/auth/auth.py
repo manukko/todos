@@ -84,6 +84,9 @@ def get_db_session():
 def get_user(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
 
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user(db, username)
@@ -144,7 +147,7 @@ def create_url_safe_token(data: dict):
     token = serializer.dumps(data)
     return token
 
-def decode_url_safe_token(token: str):
+def decode_url_safe_token(token: str) -> dict:
     try:
         data = serializer.loads(token)
         return data
