@@ -19,7 +19,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from src.db.redis import add_jti_to_blocklist
 from src.schemas.users import ResetPasswordModel, SendResetPasswordLinkModel, UserCreate, UserModel, UserTodosModel
 from src.mail import mail, create_message
-from src import env
+import env
 router = APIRouter()
 
 DOMAIN = env.DOMAIN

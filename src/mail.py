@@ -1,5 +1,5 @@
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema, MessageType
-from src.env import MAIL_FROM, MAIL_FROM_NAME, MAIL_SERVER, MAIL_PORT, MAIL_PASSWORD, MAIL_USERNAME
+from env import MAIL_FROM, MAIL_FROM_NAME, MAIL_SERVER, MAIL_PORT, MAIL_PASSWORD, MAIL_USERNAME
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
