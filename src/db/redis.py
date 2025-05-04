@@ -1,5 +1,5 @@
 import redis
-from src import env
+import env
 
 ACCESS_TOKEN_JTI_EXPIRY = 700000 # ttl of access token in the redis db
 

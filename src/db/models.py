@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, create_engine, ForeignKey, text
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base, deferred
-from src import env
+import env
 from sqlalchemy.dialects import postgresql
 from datetime import datetime
 

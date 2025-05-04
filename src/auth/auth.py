@@ -2,7 +2,7 @@ from datetime import timedelta
 import datetime
 from typing import Any, Callable
 import uuid
-import src.env as env
+import env
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
