@@ -1,4 +1,5 @@
 fastapi
+fastapi-mail
 gunicorn
 uvicorn 
 pydantic 
@@ -7,3 +8,7 @@ passlib
 bcrypt 
 python-jose
 python-multipart
+postgres
+alembic
+redis
+itsdangerous
