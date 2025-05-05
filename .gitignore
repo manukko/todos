@@ -1,5 +1,6 @@
 todos_env
 env.py
 env_prod.py
+!migrations/env.py
 __pycache__
 todo.db
