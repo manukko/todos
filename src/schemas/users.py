@@ -15,7 +15,6 @@ class UserModel(BaseModel):
     email: str
     created_at: datetime
     updated_at: datetime
-    role: str
 
 class UserTodosModel(UserModel):
     todos: List[TodoModel]
